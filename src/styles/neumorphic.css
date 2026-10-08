@@ -1,0 +1,356 @@
+:root {
+  /* Neumorphic base palette */
+  --neu-bg: #e0e0e0;
+  --neu-bg-light: #f0f0f0;
+  --neu-bg-dark: #c8c8c8;
+  --neu-text: #555;
+  --neu-text-light: #888;
+  --neu-shadow-dark: #bebebe;
+  --neu-shadow-light: #d8d8d8;
+
+  /* Spacing */
+  --neu-radius: 16px;
+  --neu-radius-sm: 10px;
+  --neu-radius-xs: 6px;
+  --neu-distance: 6px;
+  --neu-distance-sm: 3px;
+  --neu-distance-lg: 10px;
+
+  /* Hole / peg dimensions */
+  --peg-size: 24px;
+  --peg-gap: 4px;
+
+  /* Accent fallback */
+  --accent: #4ECDC4;
+
+  /* Animation */
+  --anim-fast: 0.2s;
+  --anim-normal: 0.4s;
+  --anim-slow: 0.6s;
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-peg-drop: linear(0, 0.003 0.2%, 0.011 0.4%, 0.043 0.8%, 0.092 1.2%, 0.175 1.7%, 0.343 2.5%, 0.864 4.7%, 1.022 6%, 1.041 6.7%, 1.053 7.3%, 1.06 7.9%, 1.063 8.2%, 1.064 8.6%, 1.064 9%, 1.062 9.5%, 1.059 9.9%, 1.054 10.4%, 1.042 11.3%, 1.007 13.6%, 0.992 14.9%, 0.987 15.5%, 0.983 16.1%, 0.981 16.7%, 0.979 17.3%, 0.979 17.7%, 0.98 18.2%, 0.982 19.1%, 0.986 20%, 0.998 22.4%, 1.003 23.7%, 1.005 24.9%, 1.007 26.1%, 1.006 27%, 1.006 27.9%, 1.001 31.2%, 0.999 32.5%, 0.998 33.7%, 0.998 34.9%, 0.998 36.7%, 1 41.2%, 1.001 43.6%, 1 52.4%, 1 61.1%, 1);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Neumorphic raised surface */
+.neu-raised {
+  background: var(--neu-bg);
+  border: 0px solid transparent;
+  border-radius: var(--neu-radius);
+  box-shadow: inset 1px 1px 2px 0 rgba(255, 255, 255, 0.8),
+              var(--neu-distance) var(--neu-distance) var(--neu-distance-lg) var(--neu-shadow-dark),
+              calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-distance-lg) var(--neu-shadow-light);
+  transition: box-shadow var(--anim-fast) ease,
+              border var(--anim-fast) var(--ease-bounce, ease);
+}
+
+/* Neumorphic pressed / carved surface */
+.neu-carved {
+  background: var(--neu-bg);
+  border-radius: var(--neu-radius);
+  box-shadow: inset var(--neu-distance) var(--neu-distance) var(--neu-distance-lg) var(--neu-shadow-dark),
+              inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-distance-lg) var(--neu-shadow-light);
+}
+
+.neu-carved-sm {
+  background: var(--neu-bg);
+  border-radius: var(--neu-radius-sm);
+  box-shadow: inset var(--neu-distance-sm) var(--neu-distance-sm) var(--neu-distance) var(--neu-shadow-dark),
+              inset calc(-1 * var(--neu-distance-sm)) calc(-1 * var(--neu-distance-sm)) var(--neu-distance) var(--neu-shadow-light);
+}
+
+.neu-carved-xs {
+  background: var(--neu-bg);
+  border-radius: var(--neu-radius-xs);
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark),
+              inset -2px -2px 4px var(--neu-shadow-light);
+}
+
+/* Standardized pressed states ; apply to any neumorphic button.
+   Collapses the outer shadow to 0 (flat) with a subtle border,
+   matching the NeuPad press pattern. Requires the resting element
+   to have a matching 3-layer box-shadow (inset highlight + 2 outer).
+   Use .neu-press-sm for small buttons (steppers, icon buttons,
+   segmented toggles) and .neu-press for larger ones (save, habit
+   buttons, toggle buttons). */
+.neu-press-sm:active {
+  box-shadow:
+    inset 1px 1px 2px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 0 var(--neu-shadow-dark),
+    0 0 0 0 var(--neu-shadow-light);
+  border: 0.2px solid rgba(128, 128, 128, 0.2);
+}
+
+.neu-press:active {
+  box-shadow:
+    inset 1px 1px 2px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 0 var(--neu-shadow-dark),
+    0 0 0 0 var(--neu-shadow-light);
+  border: 0.2px solid rgba(128, 128, 128, 0.2);
+}
+
+/* Neumorphic small carved hole (for jokers) */
+.neu-hole {
+  width: var(--peg-size);
+  height: var(--peg-size);
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark),
+              inset -2px -2px 4px var(--neu-shadow-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: box-shadow var(--anim-normal) var(--ease-smooth);
+}
+
+/* Neumorphic peg (raised pellet that fills the hole) */
+.neu-peg {
+  width: calc(var(--peg-size) * 0.7);
+  height: calc(var(--peg-size) * 0.7);
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: 2px 2px 4px var(--neu-shadow-dark),
+              -2px -2px 4px var(--neu-shadow-light);
+}
+
+/* Drop-in animation for pegs */
+@keyframes peg-drop {
+  from {
+    transform: translateY(-200px) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.peg-dropping {
+  animation: peg-drop var(--anim-slow) var(--ease-peg-drop) forwards;
+}
+
+/* Habit button (side label) */
+.neu-habit-btn {
+  background: var(--neu-bg);
+  border: 0px solid transparent;
+  border-radius: var(--neu-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neu-text);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow:
+    inset 1px 1px 2px 0 rgba(255, 255, 255, 0.8),
+    var(--neu-distance-sm) var(--neu-distance-sm) var(--neu-distance) var(--neu-shadow-dark),
+    calc(-1 * var(--neu-distance-sm)) calc(-1 * var(--neu-distance-sm)) var(--neu-distance) var(--neu-shadow-light);
+  transition: box-shadow var(--anim-fast) ease,
+              text-shadow 0.15s ease-out,
+              color 0.15s ease-out,
+              border var(--anim-fast) var(--ease-bounce, ease);
+}
+
+.neu-habit-btn:hover {
+  color: var(--accent);
+}
+
+.neu-habit-btn:active,
+.neu-habit-btn.pressed {
+  box-shadow:
+    inset 1px 1px 2px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 0 var(--neu-shadow-dark),
+    0 0 0 0 var(--neu-shadow-light);
+  border: 0.2px solid rgba(128, 128, 128, 0.2);
+}
+
+/* BlurFade transition */
+.blur-fade-enter-active,
+.blur-fade-leave-active {
+  transition: opacity var(--anim-normal) var(--ease-smooth),
+              scale var(--anim-normal) var(--ease-smooth);
+  scale: 1;
+}
+
+.blur-fade-enter-from {
+  opacity: 0;
+  scale: 0.95;
+}
+
+.blur-fade-leave-to {
+  opacity: 0;
+  scale: 0.95;
+}
+
+/* Modal slide-in from right: overlay fades, panel slides */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: opacity var(--anim-normal) var(--ease-smooth);
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  opacity: 0;
+}
+
+.slide-right-enter-active > *,
+.slide-right-leave-active > * {
+  transition: transform var(--anim-normal) var(--ease-smooth);
+}
+
+.slide-right-enter-from > *,
+.slide-right-leave-to > * {
+  transform: translateX(100%);
+}
+
+/* Slide-in from left (inverted burger) */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform var(--anim-slow) var(--ease-smooth);
+}
+
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(-100%);
+}
+
+/* Expand transition for + button */
+.expand-enter-active,
+.expand-leave-active {
+  transition: opacity var(--anim-slow) var(--ease-bounce),
+              max-height var(--anim-slow) var(--ease-bounce);
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 600px;
+}
+
+/* Carved / engraved text ; letters look etched into the surface */
+.text-carved {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow:
+    0.5px 1px 1px rgba(224, 224, 224, 0.5),
+    0px 0.5px 20px rgba(0, 0, 0, 0.5);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+/* Scrollbar hide */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Neumorphic scrollbar ────────────────────────────────
+   Modeled after NeuToggle: the track is a carved groove
+   (inset dual-shadow) and the thumb is a raised pellet
+   (outer dual-shadow) that lives inside it.  Both are
+   always fully visible ; no opacity tricks.
+   Apply .neu-scroll to any scrollable container, or use the
+   .neu-scroll-y / .neu-scroll-x modifiers for a single axis.
+   ─────────────────────────────────────────────────────── */
+
+.neu-scroll::-webkit-scrollbar {
+  width: 24px;
+  height: 24px;
+}
+
+/* The scrollbar area is pinned to the container edge and
+   horizontal margins are ignored, so the gap comes from the
+   track's own transparent border: the carved groove is drawn
+   as a gradient clipped to the padding box (an inset shadow
+   would leak into the border). */
+.neu-scroll::-webkit-scrollbar-track {
+  border: 4px solid transparent;
+  border-radius: 100vw;
+  background: linear-gradient(to right,
+                var(--neu-shadow-dark),
+                var(--neu-bg) 40%,
+                var(--neu-bg) 60%,
+                var(--neu-shadow-light)) padding-box;
+  margin: 4px;
+}
+
+.neu-scroll::-webkit-scrollbar-thumb,
+.neu-scroll::-webkit-scrollbar-thumb:hover,
+.neu-scroll::-webkit-scrollbar-thumb:active {
+  background: var(--neu-bg);
+  border-radius: 100vw;
+  box-shadow: inset 2px 2px 3px var(--neu-shadow-light),
+              inset -2px -2px 3px var(--neu-shadow-dark);
+  border: 6px solid transparent;
+  background-clip: padding-box;
+}
+
+.neu-scroll::-webkit-scrollbar-button,
+.neu-scroll::-webkit-scrollbar-button:start,
+.neu-scroll::-webkit-scrollbar-button:end,
+.neu-scroll::-webkit-scrollbar-button:vertical:start,
+.neu-scroll::-webkit-scrollbar-button:vertical:end,
+.neu-scroll::-webkit-scrollbar-button:horizontal:start,
+.neu-scroll::-webkit-scrollbar-button:horizontal:end,
+.neu-scroll::-webkit-scrollbar-button:increment,
+.neu-scroll::-webkit-scrollbar-button:decrement,
+.neu-scroll::-webkit-scrollbar-button:vertical:increment,
+.neu-scroll::-webkit-scrollbar-button:vertical:decrement,
+.neu-scroll::-webkit-scrollbar-button:horizontal:increment,
+.neu-scroll::-webkit-scrollbar-button:horizontal:decrement,
+.neu-scroll::-webkit-scrollbar-button:single-button,
+.neu-scroll::-webkit-scrollbar-button:double-button,
+.neu-scroll::-webkit-scrollbar-button:start:increment,
+.neu-scroll::-webkit-scrollbar-button:start:decrement,
+.neu-scroll::-webkit-scrollbar-button:end:increment,
+.neu-scroll::-webkit-scrollbar-button:end:decrement {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  background: transparent !important;
+}
+
+/* Axis modifiers ; pair with .neu-scroll: class="neu-scroll neu-scroll-y" */
+.neu-scroll-y::-webkit-scrollbar { width: 18px; height: 0; }
+.neu-scroll-x::-webkit-scrollbar { width: 0; height: 18px; }
+
+/* Horizontal track: same carved gradient, rotated 90° */
+.neu-scroll-x::-webkit-scrollbar-track {
+  background: linear-gradient(to bottom,
+                var(--neu-shadow-dark),
+                var(--neu-bg) 40%,
+                var(--neu-bg) 60%,
+                var(--neu-shadow-light)) padding-box;
+}
+
+/* Corner where two scrollbars meet */
+.neu-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}

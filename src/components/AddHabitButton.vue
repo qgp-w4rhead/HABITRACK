@@ -35,6 +35,7 @@
             :goal="gaugeHabit.goal"
             :accent-color="gaugeHabit.accentColor"
             :habit-name="gaugeHabitName"
+            :decimals="gaugeHabit.gaugeDecimals"
             @close="$emit('collapse')"
             @confirm="onGaugeConfirm"
           />

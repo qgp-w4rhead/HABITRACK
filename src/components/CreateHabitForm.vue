@@ -96,6 +96,7 @@
         v-model:endDate="form.endDate"
         v-model:dateEnabled="form.dateEnabled"
         v-model:trackingMode="form.trackingMode"
+        v-model:gaugeDecimals="form.gaugeDecimals"
         v-model:goalKind="form.goalKind"
         v-model:repeatRate="form.repeatRate"
       />
@@ -136,6 +137,7 @@ const form = reactive<{
   type: HabitType
   overflowType: OverflowType
   trackingMode: TrackingMode
+  gaugeDecimals: boolean
   startDate: string
   endDate: string
   dateEnabled: boolean
@@ -150,6 +152,7 @@ const form = reactive<{
   type: 'positive',
   overflowType: 'positive',
   trackingMode: 'peg',
+  gaugeDecimals: false,
   startDate: '',
   endDate: '',
   dateEnabled: false,
@@ -182,6 +185,7 @@ function submit() {
     type: form.type,
     overflowType: form.overflowType,
     trackingMode: form.trackingMode,
+    gaugeDecimals: form.gaugeDecimals,
     startDate: form.dateEnabled ? form.startDate : '',
     endDate: form.dateEnabled ? form.endDate : '',
     goalKind: form.goalKind,

@@ -1,7 +1,15 @@
 <template>
   <div class="gauge-wheel" :style="{ '--accent': accentColor }">
     <div class="dial-row">
-      <div v-if="isChunked" class="dial-spacer"></div>
+      <MicroDial
+        v-if="isChunked && decimals"
+        :value="intPart"
+        :max-value="maxVal"
+        :accent-color="accentColor"
+        :scale="0.8"
+        @update:value="onMicroUpdate"
+      />
+      <div v-else-if="isChunked || decimals" class="dial-spacer"></div>
       <div
         ref="wheelRef"
         class="wheel-container neu-carved"
@@ -29,14 +37,24 @@
           @pointerleave="onCenterUp"
           aria-label="Add value"
         >
-          <span class="center-value">{{ currentValue }}</span>
+          <span class="center-value">{{ displayValue }}</span>
         </button>
         <div class="wheel-pointer"></div>
       </div>
 
       <MicroDial
-        v-if="isChunked"
-        :value="currentValue"
+        v-if="decimals"
+        :value="totalTenths"
+        :min="-10"
+        :max-value="maxTenthsIndex"
+        :accent-color="accentColor"
+        :scale="isChunked ? 0.8 : 1"
+        :format-value="formatDecimalValue"
+        @update:value="onTenthsUpdate"
+      />
+      <MicroDial
+        v-else-if="isChunked"
+        :value="intPart"
         :max-value="maxVal"
         :accent-color="accentColor"
         @update:value="onMicroUpdate"
@@ -54,9 +72,11 @@ const props = withDefaults(defineProps<{
   goal: number
   accentColor?: string
   habitName?: string
+  decimals?: boolean
 }>(), {
   accentColor: '#4ECDC4',
   habitName: '',
+  decimals: false,
 })
 
 const emit = defineEmits<{
@@ -70,6 +90,18 @@ const currentValue = ref(Math.max(props.value, 1))
 const rotation = ref(0)
 const isPressed = ref(false)
 const isReleasing = ref(false)
+
+// In decimals mode the wheel still selects the integer part only; the micro
+// dial becomes an infinite tenths scale showing the full value (0.9, 1, 1.1
+// …) — it emits an unbounded tenths index so carrying into the integer just
+// falls out of the index itself.
+const intPart = computed(() => Math.floor(currentValue.value))
+const frac = computed(() => currentValue.value - intPart.value)
+const totalTenths = computed(() => Math.round((currentValue.value - 1) * 10))
+const maxTenthsIndex = computed(() => (maxVal.value - 1) * 10)
+const displayValue = computed(() => props.decimals ? currentValue.value.toFixed(1) : String(currentValue.value))
+// Tenths index → full value label (index 0 = 1.0, −10 = 0.0, 65 = 7.5).
+const formatDecimalValue = (v: number) => String((v + 10) / 10)
 
 function onCenterDown() {
   if (isReleasing.value) {
@@ -109,9 +141,11 @@ function tickToValue(tickIndex: number): number {
   return Math.min((tickIndex + 1) * chunkSize.value, maxVal.value)
 }
 
+// The wheel only carries whole values: decimals floor to the integer part
+// (clamped at tick 1 — the tenths dial can take the value below 1).
 function valueToTickIndex(val: number): number {
-  if (chunkSize.value === 1) return val - 1
-  const idx = Math.floor(val / chunkSize.value) - 1
+  if (chunkSize.value === 1) return Math.max(Math.floor(val) - 1, 0)
+  const idx = Math.max(Math.floor(val / chunkSize.value) - 1, 0)
   return ((idx % visualTickCount.value) + visualTickCount.value) % visualTickCount.value
 }
 
@@ -162,7 +196,11 @@ function onPointerMove(e: PointerEvent) {
 
   const rawTickIndex = Math.trunc(-rotation.value / anglePerTick.value)
   const clamped = ((rawTickIndex % visualTickCount.value) + visualTickCount.value) % visualTickCount.value
-  currentValue.value = Math.min(Math.max(tickToValue(clamped), 1), maxVal.value)
+  const intTick = Math.min(Math.max(tickToValue(clamped), 1), maxVal.value)
+  // Whole ticks move the integer part; any decimal fraction rides along.
+  currentValue.value = props.decimals
+    ? Math.min(intTick + frac.value, maxVal.value)
+    : intTick
 }
 
 function onPointerUp() {
@@ -184,11 +222,19 @@ function snapToTick() {
 }
 
 function onMicroUpdate(val: number) {
-  currentValue.value = val
+  currentValue.value = props.decimals
+    ? Math.min(val + frac.value, maxVal.value)
+    : val
+}
+
+// The tenths dial emits an absolute tenths index (0 … maxTenthsIndex), so
+// carrying past .9 and borrowing below .0 happen inside the value itself.
+function onTenthsUpdate(index: number) {
+  currentValue.value = (10 + index) / 10
 }
 
 function onConfirm() {
-  emit('confirm', currentValue.value)
+  emit('confirm', props.decimals ? Math.round(currentValue.value * 10) / 10 : currentValue.value)
 }
 
 onMounted(() => {

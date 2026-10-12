@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <!-- Raised neumorphic surface: light top-left -> shadowed bottom-right -->
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f4f4"/>
+      <stop offset="1" stop-color="#c4c4c4"/>
+    </linearGradient>
+    <!-- Carved hole: dark top-left -> light bottom-right -->
+    <linearGradient id="hole" x1="0" y1="0" x2="0.9" y2="0.9">
+      <stop offset="0" stop-color="#a3a3a3"/>
+      <stop offset="0.55" stop-color="#c9c9c9"/>
+      <stop offset="1" stop-color="#e6e6e6"/>
+    </linearGradient>
+    <!-- Accent peg -->
+    <linearGradient id="peg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#74e4da"/>
+      <stop offset="1" stop-color="#37a99d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tile drop shadow + raised body -->
+  <rect x="6.5" y="8" width="54" height="54" rx="15" fill="#a8a8a8" opacity="0.55"/>
+  <rect x="4" y="4" width="54" height="54" rx="15" fill="url(#tile)"/>
+
+  <!-- Pegboard: 4x4 carved holes -->
+  <g fill="url(#hole)">
+    <circle cx="13" cy="13" r="4.8"/><circle cx="25" cy="13" r="4.8"/><circle cx="37" cy="13" r="4.8"/><circle cx="49" cy="13" r="4.8"/>
+    <circle cx="13" cy="25" r="4.8"/><circle cx="25" cy="25" r="4.8"/><circle cx="37" cy="25" r="4.8"/>
+    <circle cx="25" cy="37" r="4.8"/><circle cx="49" cy="37" r="4.8"/>
+    <circle cx="13" cy="49" r="4.8"/><circle cx="37" cy="49" r="4.8"/><circle cx="49" cy="49" r="4.8"/>
+  </g>
+
+  <!-- Pegs forming a check mark -->
+  <g>
+    <circle cx="49" cy="25" r="4.1" fill="#2f8f85" opacity="0.35" transform="translate(0.9 1.3)"/>
+    <circle cx="14" cy="38" r="4.1" fill="#2f8f85" opacity="0.35" transform="translate(0.9 1.3)"/>
+    <circle cx="37" cy="38" r="4.1" fill="#2f8f85" opacity="0.35" transform="translate(0.9 1.3)"/>
+    <circle cx="26" cy="50" r="4.1" fill="#2f8f85" opacity="0.35" transform="translate(0.9 1.3)"/>
+
+    <circle cx="49" cy="25" r="4.1" fill="url(#peg)"/>
+    <circle cx="14" cy="38" r="4.1" fill="url(#peg)"/>
+    <circle cx="37" cy="38" r="4.1" fill="url(#peg)"/>
+    <circle cx="26" cy="50" r="4.1" fill="url(#peg)"/>
+
+    <circle cx="47.8" cy="23.8" r="1.2" fill="#ffffff" opacity="0.55"/>
+    <circle cx="12.8" cy="36.8" r="1.2" fill="#ffffff" opacity="0.55"/>
+    <circle cx="35.8" cy="36.8" r="1.2" fill="#ffffff" opacity="0.55"/>
+    <circle cx="24.8" cy="48.8" r="1.2" fill="#ffffff" opacity="0.55"/>
+  </g>
+</svg>

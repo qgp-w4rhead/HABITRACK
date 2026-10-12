@@ -20,7 +20,7 @@
           :class="{ 'micro-line--active': line.offset === 0, 'micro-line--faded': !line.inRange }"
         >
           <span class="micro-line-mark"></span>
-          <span v-if="line.inRange" class="micro-line-value">{{ line.value }}</span>
+          <span v-if="line.inRange" class="micro-line-value">{{ formatValue(line.value) }}</span>
         </div>
       </div>
     </div>
@@ -35,13 +35,17 @@ import { ref, computed, onBeforeUnmount, watch } from 'vue'
 const props = withDefaults(defineProps<{
   value: number
   maxValue: number
+  min?: number
   accentColor?: string
   orientation?: 'vertical' | 'horizontal'
   scale?: number
+  formatValue?: (value: number) => string
 }>(), {
+  min: 1,
   accentColor: '#4ECDC4',
   orientation: 'vertical',
   scale: 1,
+  formatValue: (v: number) => String(v),
 })
 
 const isHorizontal = computed(() => props.orientation === 'horizontal')
@@ -58,7 +62,7 @@ const dialRef = ref<HTMLElement | null>(null)
 const offset = ref(0)
 
 const scrollOffset = computed(() => {
-  return (props.value - 1) * LINE_HEIGHT - offset.value
+  return (props.value - props.min) * LINE_HEIGHT - offset.value
 })
 
 const lines = computed(() => {
@@ -66,7 +70,7 @@ const lines = computed(() => {
   const half = Math.floor(VISIBLE_LINES / 2) + BUFFER_LINES
   for (let i = -half; i <= half; i++) {
     const val = props.value + i
-    arr.push({ value: val, offset: i, inRange: val >= 1 && val <= props.maxValue })
+    arr.push({ value: val, offset: i, inRange: val >= props.min && val <= props.maxValue })
   }
   return arr
 })
@@ -90,8 +94,8 @@ function onPointerMove(e: PointerEvent) {
   const currentPos = isHorizontal.value ? e.clientX : e.clientY
   offset.value = startOffset + (startPos - currentPos) / props.scale
 
-  const rawValue = 1 + Math.round(offset.value / LINE_HEIGHT)
-  const clamped = Math.min(Math.max(rawValue, 1), props.maxValue)
+  const rawValue = props.min + Math.round(offset.value / LINE_HEIGHT)
+  const clamped = Math.min(Math.max(rawValue, props.min), props.maxValue)
   if (clamped !== props.value) {
     emit('update:value', clamped)
   }
@@ -99,14 +103,14 @@ function onPointerMove(e: PointerEvent) {
 
 function onPointerUp() {
   isDragging = false
-  offset.value = (props.value - 1) * LINE_HEIGHT
+  offset.value = (props.value - props.min) * LINE_HEIGHT
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
 }
 
 watch(() => props.value, (val) => {
   if (!isDragging) {
-    offset.value = (val - 1) * LINE_HEIGHT
+    offset.value = (val - props.min) * LINE_HEIGHT
   }
 })
 

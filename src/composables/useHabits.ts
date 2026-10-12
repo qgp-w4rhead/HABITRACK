@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { useProfile } from '@/composables/useProfile'
 import { useSettings } from '@/composables/useSettings'
 
-const SCHEMA_VERSION = 4
+const SCHEMA_VERSION = 5
 const LEGACY_KEY = 'habitrack_habits'
 
 interface HabitsFile {
@@ -35,6 +35,7 @@ function migrateHabit(h: Habit): Habit {
     jokers: h.jokers ?? 0,
     overflowType: h.overflowType ?? h.type ?? 'positive',
     trackingMode: h.trackingMode ?? 'peg',
+    gaugeDecimals: h.gaugeDecimals ?? false,
     startDate: h.startDate ?? '',
     endDate: h.endDate ?? '',
     pegTimestamps: h.pegTimestamps ?? [],
@@ -269,6 +270,7 @@ function addHabit(input: HabitInput): { habit: Habit; similar: Habit[] } {
     type: input.type,
     overflowType: input.overflowType,
     trackingMode: input.trackingMode,
+    gaugeDecimals: input.gaugeDecimals,
     accentColor: randomAccentColor(),
     active: true,
     cheatPeriods: [],
@@ -340,7 +342,7 @@ function reactivateByName(name: string): Habit | null {
   return null
 }
 
-function updateHabit(id: string, updates: Partial<Pick<Habit, 'renamed' | 'description' | 'condition' | 'goal' | 'jokers' | 'type' | 'overflowType' | 'trackingMode' | 'accentColor' | 'startDate' | 'endDate' | 'goalKind' | 'repeatRate'>>) {
+function updateHabit(id: string, updates: Partial<Pick<Habit, 'renamed' | 'description' | 'condition' | 'goal' | 'jokers' | 'type' | 'overflowType' | 'trackingMode' | 'gaugeDecimals' | 'accentColor' | 'startDate' | 'endDate' | 'goalKind' | 'repeatRate'>>) {
   const habit = habits.value.find(h => h.id === id)
   if (!habit) return
   const cadenceChanged =
@@ -367,7 +369,8 @@ function recordDrops(habit: Habit, n: number) {
 
 // Drop the most recent timestamps after a decrement (removes the last pegs).
 function trimDrops(habit: Habit) {
-  habit.pegTimestamps.length = Math.min(habit.pegTimestamps.length, habit.currentCount)
+  // Floor the count: decimal gauge counts can't be an array length.
+  habit.pegTimestamps.length = Math.min(habit.pegTimestamps.length, Math.floor(habit.currentCount))
 }
 
 function incrementPeg(id: string) {
@@ -384,11 +387,13 @@ function addGaugeValue(id: string, value: number) {
   const habit = habits.value.find(h => h.id === id)
   if (!habit) return
   ensureCurrentPeriod(habit)
-  const next = Math.max(0, habit.currentCount + value)
-  const diff = next - habit.currentCount
+  // Round to tenths: decimal gauge values would otherwise accumulate float error.
+  const next = Math.max(0, Math.round((habit.currentCount + value) * 10) / 10)
+  const delta = next - habit.currentCount
   habit.currentCount = next
-  if (diff > 0) recordDrops(habit, diff)
-  else if (diff < 0) trimDrops(habit)
+  const drops = Math.round(delta)
+  if (drops > 0) recordDrops(habit, drops)
+  else if (delta < 0) trimDrops(habit)
   updateCompletion(habit)
   touch(habit)
 }

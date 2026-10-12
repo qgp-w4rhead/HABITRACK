@@ -23,6 +23,14 @@
         />
       </div>
 
+      <!-- Decimal input, only for gauge tracking -->
+      <transition name="smooth-expand">
+        <div v-if="trackingMode === 'gauge'" class="option-row option-row--sub">
+          <span class="option-label">Allow decimals</span>
+          <NeuToggle v-model="gaugeDecimals" />
+        </div>
+      </transition>
+
       <!-- Goal type: one-shot vs repeats -->
       <div class="option-row">
         <span class="option-label">Goal type</span>
@@ -135,6 +143,7 @@ const startDate = defineModel<string>('startDate', { default: '' })
 const endDate = defineModel<string>('endDate', { default: '' })
 const dateEnabled = defineModel<boolean>('dateEnabled', { default: false })
 const trackingMode = defineModel<TrackingMode>('trackingMode', { default: 'peg' })
+const gaugeDecimals = defineModel<boolean>('gaugeDecimals', { default: false })
 const goalKind = defineModel<GoalKind>('goalKind', { default: 'repetitive' })
 const repeatRate = defineModel<RepeatRate>('repeatRate', { default: 'daily' })
 
@@ -262,6 +271,15 @@ function parseDateInput(event: Event, field: 'start' | 'end') {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
+}
+
+.option-row--sub {
+  padding-left: 24px;
+}
+
+.option-row--sub .option-label {
+  font-weight: 500;
+  color: var(--neu-text-light);
 }
 
 .option-label {

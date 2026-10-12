@@ -30,6 +30,7 @@ export interface Habit {
   type: HabitType            // positive = maximize, negative = minimize
   overflowType: OverflowType // positive = bonus, negative = overdoing it, neutral = just extra
   trackingMode: TrackingMode // peg = pegboard, gauge = draggable wheel
+  gaugeDecimals: boolean     // gauge mode only: wheel accepts decimal (tenths) values
   accentColor: string        // randomly assigned accent color
   active: boolean            // false = deactivated but kept in DB
   cheatPeriods: CheatPeriod[]
@@ -53,6 +54,7 @@ export interface HabitInput {
   type: HabitType
   overflowType: OverflowType
   trackingMode: TrackingMode
+  gaugeDecimals: boolean
   startDate: string
   endDate: string
   goalKind: GoalKind

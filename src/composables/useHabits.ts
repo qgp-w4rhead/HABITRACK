@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { useProfile } from '@/composables/useProfile'
 import { useSettings } from '@/composables/useSettings'
 
-const SCHEMA_VERSION = 5
+const SCHEMA_VERSION = 6
 const LEGACY_KEY = 'habitrack_habits'
 
 interface HabitsFile {
@@ -39,6 +39,8 @@ function migrateHabit(h: Habit): Habit {
     startDate: h.startDate ?? '',
     endDate: h.endDate ?? '',
     pegTimestamps: h.pegTimestamps ?? [],
+    pegNotes: h.pegNotes ?? [],
+    justify: h.justify ?? false,
     updatedAt: h.updatedAt ?? h.createdAt ?? new Date().toISOString(),
     goalKind: h.goalKind ?? 'singular',
     repeatRate: h.repeatRate ?? null,
@@ -219,6 +221,7 @@ function ensureCurrentPeriod(habit: Habit, now = new Date()) {
     })
     habit.currentCount = 0
     habit.pegTimestamps = []
+    habit.pegNotes = []
     cursor = next.getTime()
   } while (cursor < expected)
   habit.periodStart = new Date(expected).toISOString()
@@ -267,10 +270,12 @@ function addHabit(input: HabitInput): { habit: Habit; similar: Habit[] } {
     jokers: input.jokers,
     currentCount: 0,
     pegTimestamps: [],
+    pegNotes: [],
     type: input.type,
     overflowType: input.overflowType,
     trackingMode: input.trackingMode,
     gaugeDecimals: input.gaugeDecimals,
+    justify: input.justify,
     accentColor: randomAccentColor(),
     active: true,
     cheatPeriods: [],
@@ -315,6 +320,7 @@ function reactivateHabit(id: string) {
     habit.active = true
     habit.currentCount = 0
     habit.pegTimestamps = []
+    habit.pegNotes = []
     habit.completedAt = null
     if (habit.goalKind === 'repetitive' && habit.repeatRate) {
       habit.periodStart = periodStartFor(habit.repeatRate).toISOString()
@@ -332,6 +338,7 @@ function reactivateByName(name: string): Habit | null {
     existing.active = true
     existing.currentCount = 0
     existing.pegTimestamps = []
+    existing.pegNotes = []
     existing.completedAt = null
     if (existing.goalKind === 'repetitive' && existing.repeatRate) {
       existing.periodStart = periodStartFor(existing.repeatRate).toISOString()
@@ -342,7 +349,7 @@ function reactivateByName(name: string): Habit | null {
   return null
 }
 
-function updateHabit(id: string, updates: Partial<Pick<Habit, 'renamed' | 'description' | 'condition' | 'goal' | 'jokers' | 'type' | 'overflowType' | 'trackingMode' | 'gaugeDecimals' | 'accentColor' | 'startDate' | 'endDate' | 'goalKind' | 'repeatRate'>>) {
+function updateHabit(id: string, updates: Partial<Pick<Habit, 'renamed' | 'description' | 'condition' | 'goal' | 'jokers' | 'type' | 'overflowType' | 'trackingMode' | 'gaugeDecimals' | 'justify' | 'accentColor' | 'startDate' | 'endDate' | 'goalKind' | 'repeatRate'>>) {
   const habit = habits.value.find(h => h.id === id)
   if (!habit) return
   const cadenceChanged =
@@ -358,32 +365,46 @@ function updateHabit(id: string, updates: Partial<Pick<Habit, 'renamed' | 'descr
   touch(habit)
 }
 
-// Append `n` drop timestamps ending at the current count. Pads with nulls so
-// indices stay aligned with peg order for habits predating timestamp tracking.
-function recordDrops(habit: Habit, n: number) {
+// Append `n` drop records ending at the current count. Pads with nulls so
+// indices stay aligned with peg order for habits predating timestamp tracking,
+// and keeps pegNotes index-aligned with pegTimestamps. A justification rides
+// on the last record of the batch; n = 0 is a fractional-only gauge add whose
+// note still gets a record so it shows up in the gauge tooltip.
+function recordDrops(habit: Habit, n: number, note?: string) {
   const ts = habit.pegTimestamps
+  const notes = habit.pegNotes
   while (ts.length < habit.currentCount - n) ts.push(null)
+  while (notes.length < ts.length) notes.push(null)
   const now = new Date().toISOString()
-  for (let i = 0; i < n; i++) ts.push(now)
+  if (n === 0) {
+    if (note) { ts.push(now); notes.push(note) }
+    return
+  }
+  for (let i = 0; i < n; i++) {
+    ts.push(now)
+    notes.push(i === n - 1 ? (note ?? null) : null)
+  }
 }
 
-// Drop the most recent timestamps after a decrement (removes the last pegs).
+// Drop the most recent records after a decrement (removes the last pegs).
 function trimDrops(habit: Habit) {
   // Floor the count: decimal gauge counts can't be an array length.
-  habit.pegTimestamps.length = Math.min(habit.pegTimestamps.length, Math.floor(habit.currentCount))
+  const floor = Math.floor(habit.currentCount)
+  habit.pegTimestamps.length = Math.min(habit.pegTimestamps.length, floor)
+  habit.pegNotes.length = Math.min(habit.pegNotes.length, floor)
 }
 
-function incrementPeg(id: string) {
+function incrementPeg(id: string, note?: string) {
   const habit = habits.value.find(h => h.id === id)
   if (!habit) return
   ensureCurrentPeriod(habit)
   habit.currentCount++
-  recordDrops(habit, 1)
+  recordDrops(habit, 1, note)
   updateCompletion(habit)
   touch(habit)
 }
 
-function addGaugeValue(id: string, value: number) {
+function addGaugeValue(id: string, value: number, note?: string) {
   const habit = habits.value.find(h => h.id === id)
   if (!habit) return
   ensureCurrentPeriod(habit)
@@ -392,8 +413,9 @@ function addGaugeValue(id: string, value: number) {
   const delta = next - habit.currentCount
   habit.currentCount = next
   const drops = Math.round(delta)
-  if (drops > 0) recordDrops(habit, drops)
+  if (drops > 0) recordDrops(habit, drops, note)
   else if (delta < 0) trimDrops(habit)
+  else if (note) recordDrops(habit, 0, note)
   updateCompletion(habit)
   touch(habit)
 }

@@ -105,6 +105,7 @@
         v-model:dateEnabled="editForm.dateEnabled"
         v-model:trackingMode="editForm.trackingMode"
         v-model:gaugeDecimals="editForm.gaugeDecimals"
+        v-model:justify="editForm.justify"
         v-model:goalKind="editForm.goalKind"
         v-model:repeatRate="editForm.repeatRate"
       />
@@ -151,6 +152,7 @@ const editForm = reactive({
   accentColor: '#4ECDC4',
   trackingMode: 'peg' as TrackingMode,
   gaugeDecimals: false,
+  justify: false,
   startDate: '',
   endDate: '',
   dateEnabled: false,
@@ -170,6 +172,7 @@ watch(() => props.habit, (habit) => {
     editForm.accentColor = habit.accentColor
     editForm.trackingMode = habit.trackingMode
     editForm.gaugeDecimals = habit.gaugeDecimals
+    editForm.justify = habit.justify
     editForm.startDate = habit.startDate || ''
     editForm.endDate = habit.endDate || ''
     editForm.dateEnabled = !!(habit.startDate || habit.endDate)
@@ -191,6 +194,7 @@ function save() {
     accentColor: editForm.accentColor,
     trackingMode: editForm.trackingMode,
     gaugeDecimals: editForm.gaugeDecimals,
+    justify: editForm.justify,
     startDate: editForm.dateEnabled ? editForm.startDate : '',
     endDate: editForm.dateEnabled ? editForm.endDate : '',
     goalKind: editForm.goalKind,

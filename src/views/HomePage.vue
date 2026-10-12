@@ -87,6 +87,15 @@
         </div>
       </transition>
 
+      <!-- Justification prompt (peg drop / gauge add) -->
+      <JustifyModal
+        :open="justifyOpen"
+        :habit-name="justifyHabitName"
+        :context-label="justifyLabel"
+        @confirm="onJustifyConfirm"
+        @cancel="onJustifyCancel"
+      />
+
       <!-- Manage Habits Slide-over Panel -->
       <transition name="slide-right">
         <div v-if="manageOpen" class="manage-overlay" @click.self="closeManage">
@@ -131,6 +140,7 @@ import { IonPage, IonContent } from '@ionic/vue'
 import { useHabits } from '@/composables/useHabits'
 import { useProfile } from '@/composables/useProfile'
 import type { Habit, HabitInput } from '@/types/habit'
+import { getHabitName } from '@/types/habit'
 import HabitBoard from '@/components/HabitBoard.vue'
 import AddHabitButton from '@/components/AddHabitButton.vue'
 import BurgerSlide from '@/components/BurgerSlide.vue'
@@ -140,6 +150,7 @@ import EditHabitPanel from '@/components/EditHabitPanel.vue'
 import CheatPeriodPanel from '@/components/CheatPeriodPanel.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import HistoryCalendar from '@/components/HistoryCalendar.vue'
+import JustifyModal from '@/components/JustifyModal.vue'
 
 const {
   habits,
@@ -169,8 +180,25 @@ const gaugeHabit = ref<Habit | null>(null)
 const manageOpen = ref(false)
 const manageView = ref<'list' | 'edit' | 'cheat'>('list')
 const selectedHabit = ref<Habit | null>(null)
+const justifyOpen = ref(false)
+const justifyHabit = ref<Habit | null>(null)
+const pendingDrop = ref<{ id: string; value?: number } | null>(null)
+
+const justifyHabitName = computed(() =>
+  justifyHabit.value ? getHabitName(justifyHabit.value) : '',
+)
+const justifyLabel = computed(() =>
+  pendingDrop.value?.value !== undefined ? `+${pendingDrop.value.value}` : 'peg',
+)
 
 function onHabitPress(id: string) {
+  const habit = habits.value.find(h => h.id === id)
+  if (habit?.justify) {
+    pendingDrop.value = { id }
+    justifyHabit.value = habit
+    justifyOpen.value = true
+    return
+  }
   incrementPeg(id)
 }
 
@@ -192,9 +220,38 @@ function onDrawerCollapse() {
 }
 
 function onGaugeConfirm(id: string, value: number) {
+  const habit = habits.value.find(h => h.id === id)
+  if (habit?.justify) {
+    pendingDrop.value = { id, value }
+    justifyHabit.value = habit
+    justifyOpen.value = true
+    return
+  }
   addGaugeValue(id, value)
   formExpanded.value = false
   gaugeHabit.value = null
+}
+
+function onJustifyConfirm(note: string) {
+  const pending = pendingDrop.value
+  justifyOpen.value = false
+  pendingDrop.value = null
+  justifyHabit.value = null
+  if (!pending) return
+  if (pending.value !== undefined) {
+    addGaugeValue(pending.id, pending.value, note)
+    formExpanded.value = false
+    gaugeHabit.value = null
+  } else {
+    incrementPeg(pending.id, note)
+  }
+}
+
+// Cancelling keeps the gauge drawer open so the wheel retains its value.
+function onJustifyCancel() {
+  justifyOpen.value = false
+  pendingDrop.value = null
+  justifyHabit.value = null
 }
 
 function onHabitManage(id: string) {

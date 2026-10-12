@@ -27,9 +27,11 @@ export interface Habit {
   jokers: number             // wildcard pegs (neg: extra fillable, pos: skippable days)
   currentCount: number       // how many pegs currently dropped
   pegTimestamps: (string | null)[] // ISO timestamp per dropped peg (index = peg order); null = unknown
+  pegNotes: (string | null)[] // justification per drop record, index-aligned with pegTimestamps; null = none
   type: HabitType            // positive = maximize, negative = minimize
   overflowType: OverflowType // positive = bonus, negative = overdoing it, neutral = just extra
   trackingMode: TrackingMode // peg = pegboard, gauge = draggable wheel
+  justify: boolean           // require a note/reason when dropping a peg or adding gauge value
   gaugeDecimals: boolean     // gauge mode only: wheel accepts decimal (tenths) values
   accentColor: string        // randomly assigned accent color
   active: boolean            // false = deactivated but kept in DB
@@ -55,6 +57,7 @@ export interface HabitInput {
   overflowType: OverflowType
   trackingMode: TrackingMode
   gaugeDecimals: boolean
+  justify: boolean
   startDate: string
   endDate: string
   goalKind: GoalKind

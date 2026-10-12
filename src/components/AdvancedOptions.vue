@@ -31,6 +31,12 @@
         </div>
       </transition>
 
+      <!-- Justify: require a note when dropping a peg / pressing the gauge -->
+      <div class="option-row option-row--sub">
+        <span class="option-label">Justify</span>
+        <NeuToggle v-model="justify" />
+      </div>
+
       <!-- Goal type: one-shot vs repeats -->
       <div class="option-row">
         <span class="option-label">Goal type</span>
@@ -144,6 +150,7 @@ const endDate = defineModel<string>('endDate', { default: '' })
 const dateEnabled = defineModel<boolean>('dateEnabled', { default: false })
 const trackingMode = defineModel<TrackingMode>('trackingMode', { default: 'peg' })
 const gaugeDecimals = defineModel<boolean>('gaugeDecimals', { default: false })
+const justify = defineModel<boolean>('justify', { default: false })
 const goalKind = defineModel<GoalKind>('goalKind', { default: 'repetitive' })
 const repeatRate = defineModel<RepeatRate>('repeatRate', { default: 'daily' })
 

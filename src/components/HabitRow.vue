@@ -24,6 +24,7 @@
           :accent-color="habit.accentColor"
           :joker="habit.type === 'positive' && i > positiveJokerStart"
           :dropped-at="pegDroppedAt(i)"
+          :note="pegNoteAt(i)"
         />
         <span v-if="overflowCount > 0" class="overflow-count">+{{ overflowCount }}</span>
       </div>
@@ -46,7 +47,15 @@
 
     <!-- Gauge bar (gauge mode) -->
     <div v-else class="gauge-container neu-carved-sm">
-      <div class="gauge-bar" :style="{ '--gauge-fill': gaugeFillPercent + '%', '--gauge-overflow': overflowFillPercent + '%', '--gauge-overflow-2': overflowFillPercent2 + '%' }">
+      <div
+        class="gauge-bar"
+        :style="{ '--gauge-fill': gaugeFillPercent + '%', '--gauge-overflow': overflowFillPercent + '%', '--gauge-overflow-2': overflowFillPercent2 + '%', anchorName: gaugeAnchor }"
+        @mouseenter="gaugeTipVisible = true"
+        @mouseleave="gaugeTipVisible = false"
+        @touchstart.passive="gaugeTipVisible = true"
+        @touchend="gaugeTipVisible = false"
+        @touchcancel="gaugeTipVisible = false"
+      >
         <div class="gauge-fill"></div>
         <div class="gauge-fill-overflow"></div>
         <div class="gauge-fill-overflow-2"></div>
@@ -62,11 +71,26 @@
         </div>
       </div>
     </div>
+
+    <!-- Gauge justifications balloon, teleported like the peg tooltip so
+         overflow-x on the row can't clip it -->
+    <Teleport to="body">
+      <template v-if="gaugeTipVisible && gaugeNotes.length">
+        <div class="gauge-tip-arrow" :style="{ positionAnchor: gaugeAnchor }"></div>
+        <div class="gauge-tip" :style="{ positionAnchor: gaugeAnchor }">
+          <div v-for="(entry, i) in gaugeNotes" :key="i" class="gauge-tip-entry">
+            <span class="gauge-tip-note">{{ entry.note }}</span>
+            <span v-if="entry.at" class="gauge-tip-date">{{ formatTipDate(entry.at) }}</span>
+          </div>
+          <span v-if="extraNoteCount > 0" class="gauge-tip-more">+{{ extraNoteCount }} earlier</span>
+        </div>
+      </template>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 import type { Habit } from '@/types/habit'
 import { getHabitName } from '@/types/habit'
 import { useHabits } from '@/composables/useHabits'
@@ -140,6 +164,41 @@ const displayCount = computed(() =>
 function pegDroppedAt(i: number): string | null | undefined {
   const idx = props.habit.type === 'negative' ? props.habit.jokers + i - 1 : i - 1
   return props.habit.pegTimestamps[idx]
+}
+
+// Justification attached to the same drop record, if justify was on.
+function pegNoteAt(i: number): string | null | undefined {
+  const idx = props.habit.type === 'negative' ? props.habit.jokers + i - 1 : i - 1
+  return props.habit.pegNotes[idx]
+}
+
+// Gauge tooltip: notes paired with their drop timestamps, newest first.
+const gaugeAnchor = `--gauge-${useId()}`
+const gaugeTipVisible = ref(false)
+const MAX_TIP_NOTES = 5
+
+const gaugeNotes = computed(() => {
+  const notes = props.habit.pegNotes
+  const ts = props.habit.pegTimestamps
+  const out: { note: string; at: string | null }[] = []
+  for (let i = notes.length - 1; i >= 0 && out.length < MAX_TIP_NOTES; i--) {
+    const note = notes[i]
+    if (note) out.push({ note, at: ts[i] ?? null })
+  }
+  return out
+})
+
+const extraNoteCount = computed(() =>
+  Math.max(0, props.habit.pegNotes.filter(n => n).length - gaugeNotes.value.length)
+)
+
+function formatTipDate(iso: string): string {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleString(undefined, {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
 }
 
 // How many joker slots are filled in the gauge (negative habits only)
@@ -423,6 +482,84 @@ const overflowFillPercent2 = computed(() =>
   background: var(--accent);
   opacity: 0.25;
   transition: width var(--anim-fast) var(--ease-smooth);
+}
+
+/* Gauge hover balloon listing justifications (teleported to body, anchored to
+   the gauge bar via CSS anchor positioning). Hidden entirely when anchor
+   positioning isn't supported. */
+.gauge-tip,
+.gauge-tip-arrow {
+  display: none;
+}
+
+@supports (anchor-name: --a) {
+  .gauge-tip {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: fixed;
+    /* position-anchor comes from the inline style binding */
+    position-area: top;
+    align-self: end;
+    justify-self: anchor-center;
+    margin-bottom: 4px;
+    position-try-fallbacks: flip-block;
+    position-visibility: anchors-visible;
+    padding: 6px 10px;
+    border-radius: var(--neu-radius-xs);
+    background: var(--neu-bg);
+    color: var(--neu-text);
+    font-size: 11px;
+    max-width: 220px;
+    box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.7),
+                3px 3px 6px var(--neu-shadow-dark),
+                -3px -3px 6px var(--neu-shadow-light);
+    pointer-events: none;
+    z-index: 1000;
+    animation: gauge-tip-in var(--anim-fast) var(--ease-smooth);
+  }
+
+  .gauge-tip-arrow {
+    display: block;
+    position: fixed;
+    position-area: top;
+    align-self: end;
+    justify-self: anchor-center;
+    position-try-fallbacks: flip-block;
+    position-visibility: anchors-visible;
+    width: 8px;
+    height: 8px;
+    transform: rotate(45deg);
+    background: var(--neu-bg);
+    box-shadow: 2px 2px 3px var(--neu-shadow-dark);
+    pointer-events: none;
+    z-index: 1001;
+    animation: gauge-tip-in var(--anim-fast) var(--ease-smooth);
+  }
+}
+
+.gauge-tip-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gauge-tip-note {
+  font-weight: 600;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.gauge-tip-date,
+.gauge-tip-more {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--neu-text-light);
+}
+
+@keyframes gauge-tip-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 </style>

@@ -21,7 +21,10 @@
              the balloon's edge so it reads as a nub aimed at the peg.
              As a diamond it reads correctly in both flip orientations. -->
         <div class="peg-tip-arrow" :style="{ positionAnchor: anchor }"></div>
-        <div class="peg-tip" :style="{ positionAnchor: anchor }">{{ tipText }}</div>
+        <div class="peg-tip" :style="{ positionAnchor: anchor }">
+          <span class="peg-tip-date">{{ tipText }}</span>
+          <span v-if="note" class="peg-tip-note">{{ note }}</span>
+        </div>
       </template>
     </Teleport>
   </div>
@@ -35,10 +38,12 @@ const props = withDefaults(defineProps<{
   accentColor?: string
   joker?: boolean
   droppedAt?: string | null
+  note?: string | null
 }>(), {
   accentColor: '#e0e0e0',
   joker: false,
   droppedAt: null,
+  note: null,
 })
 
 // Unique CSS anchor name so this hole's balloon locks onto its own peg
@@ -107,7 +112,9 @@ const tipText = computed(() => {
 
 @supports (anchor-name: --a) {
   .peg-tip {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     position: fixed;
     /* position-anchor comes from the inline style binding */
     position-area: top;
@@ -135,6 +142,18 @@ const tipText = computed(() => {
     pointer-events: none;
     z-index: 1000;
     animation: peg-tip-in var(--anim-fast) var(--ease-smooth);
+  }
+
+  .peg-tip-date {
+    white-space: nowrap;
+  }
+
+  .peg-tip-note {
+    white-space: normal;
+    overflow-wrap: break-word;
+    max-width: 200px;
+    font-weight: 400;
+    color: var(--neu-text-light);
   }
 
   .peg-tip-arrow {

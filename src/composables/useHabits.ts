@@ -1,11 +1,11 @@
 import { ref, computed, watch } from 'vue'
-import type { Habit, HabitInput, RepeatRate } from '@/types/habit'
+import type { GoalKind, Habit, HabitInput, RepeatRate } from '@/types/habit'
 import { randomAccentColor, getHabitName } from '@/types/habit'
 import { api } from '@/lib/api'
 import { useProfile } from '@/composables/useProfile'
 import { useSettings } from '@/composables/useSettings'
 
-const SCHEMA_VERSION = 6
+const SCHEMA_VERSION = 7
 const LEGACY_KEY = 'habitrack_habits'
 
 interface HabitsFile {
@@ -30,6 +30,19 @@ const lastSyncKey = (pid: string) => `habitrack_lastsync_${pid}`
 // Habit, bump SCHEMA_VERSION and give the field a default here so old saves
 // upgrade instead of breaking.
 function migrateHabit(h: Habit): Habit {
+  const now = new Date().toISOString()
+  // Docs saved before goals could repeat carry no goalKind ; they behaved as
+  // weekly objectives, so upgrade them instead of freezing them as one-shots.
+  const goalKind: GoalKind = h.goalKind || 'repetitive'
+  const repeatRate: RepeatRate | null =
+    goalKind === 'repetitive' ? h.repeatRate || 'weekly' : null
+  // Habits that never had a working cadence anchor to the boundary currently
+  // open: currentCount and the peg records carry into the live period, and the
+  // rollover can't backfill "missed" weeks from a stale createdAt anchor.
+  const freshAnchor =
+    repeatRate && (!h.goalKind || !h.repeatRate || !h.periodStart)
+      ? periodStartFor(repeatRate).toISOString()
+      : null
   return {
     ...h,
     jokers: h.jokers ?? 0,
@@ -41,10 +54,10 @@ function migrateHabit(h: Habit): Habit {
     pegTimestamps: h.pegTimestamps ?? [],
     pegNotes: h.pegNotes ?? [],
     justify: h.justify ?? false,
-    updatedAt: h.updatedAt ?? h.createdAt ?? new Date().toISOString(),
-    goalKind: h.goalKind ?? 'singular',
-    repeatRate: h.repeatRate ?? null,
-    periodStart: h.periodStart ?? h.createdAt ?? new Date().toISOString(),
+    updatedAt: h.updatedAt ?? h.createdAt ?? now,
+    goalKind,
+    repeatRate,
+    periodStart: freshAnchor ?? h.periodStart ?? h.createdAt ?? now,
     history: h.history ?? [],
     completedAt: h.completedAt ?? null,
   }
@@ -134,6 +147,10 @@ watch(currentProfileId, (pid, prevPid) => {
     loadedPid = pid
     habits.value = loadHabits(pid)
     refreshHabitStates()
+    // The habits watcher registers after this immediate-run callback, so the
+    // assignment above is unobserved ; persist migrations + rollover changes now
+    // instead of waiting for an arbitrary mutation to trigger a save.
+    saveHabits(pid, habits.value)
     switching.value = false
     syncNow()
   }
